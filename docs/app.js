@@ -14,7 +14,7 @@
 // (los vacíos se saltean con las flechas) y se finaliza. La finalización viaja en
 // la misma cola que los scores ({tipo:'finalizar'}) y dispara el mail a los admins.
 
-const VERSION = '1.2.2';
+const VERSION = '1.2.3';
 const PCT = { 1: -7, 2: -5, 3: -3, 4: -2, 5: 0, 6: 2, 7: 3, 8: 5, 9: 7 };
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -202,8 +202,12 @@ function iniciarCarga() {
   render();
 }
 
-async function finalizarCarga() {
-  const f = hoyISO();
+// Finaliza la carga de un día: hoy (cualquiera) o un día anterior (solo un administrador,
+// para cerrar días que quedaron abiertos; en ese caso el script no manda el mail de aviso).
+async function finalizarCarga(fecha) {
+  const f = typeof fecha === 'string' ? fecha : hoyISO();
+  const esHoy = f === hoyISO();
+  if (!esHoy && !esAdmin()) { toast('Solo un administrador puede cerrar un día anterior'); return; }
   if (finalizada(f)) { irAVista('resumen'); return; }
   const lista = corralesActivos();
   const faltan = lista.filter((c) => scoreDe(f, c.numero) == null).map((c) => c.numero);
@@ -211,12 +215,13 @@ async function finalizarCarga() {
   if (!cargados) { toast('Todavía no hay ningún corral cargado'); return; }
   const ok = await cartel({
     icono: '🏁',
-    titulo: '¿Finalizar la carga de hoy?',
+    titulo: esHoy ? '¿Finalizar la carga de hoy?' : '¿Finalizar la carga del ' + fechaLarga(f) + '?',
     html: '<b>' + cargados + ' de ' + lista.length + '</b> corrales cargados.' +
       (faltan.length ? '<br>Quedan sin cargar:<br><b style="font-size:21px">CORRAL ' + faltan.join(', ') + '</b>' : '') +
-      '<br><br>Se avisa a los administradores. Después se puede corregir desde el Resumen.',
+      (esHoy ? '<br><br>Se avisa a los administradores. Después se puede corregir desde el Resumen.'
+        : '<br><br>Es un día anterior: queda cerrado sin mandar aviso por mail.'),
     si: 'Finalizar',
-    no: 'Seguir cargando',
+    no: esHoy ? 'Seguir cargando' : 'Cancelar',
   });
   if (!ok) return;
   const op = { id: uid(), tipo: 'finalizar', fecha: f, ts: Date.now(), usuario };
@@ -225,8 +230,9 @@ async function finalizarCarga() {
   guardarTodo();
   programarSync(300);
   estado.corrigiendo = false;
-  toast(navigator.onLine && SCRIPT_URL ? 'Carga finalizada. Se avisa a los administradores.'
-    : 'Carga finalizada. El aviso sale cuando haya señal.', 3500);
+  toast(!esHoy ? 'Día cerrado.'
+    : navigator.onLine && SCRIPT_URL ? 'Carga finalizada. Se avisa a los administradores.'
+      : 'Carga finalizada. El aviso sale cuando haya señal.', 3500);
   irAVista('resumen');
 }
 
@@ -351,7 +357,10 @@ function renderResumen() {
     est.className = 'resumen-estado';
     est.textContent = 'Este día no se finalizó';
   }
-  $('btn-finalizar-resumen').classList.toggle('oculto', !(esHoy && !info && empezada(f)));
+  // Hoy: mientras la carga está en curso. Días anteriores sin cerrar: solo para administradores.
+  const puedeCerrar = !info && cargadosDe(f).length > 0 && (esHoy ? empezada(f) : esAdmin());
+  $('btn-finalizar-resumen').classList.toggle('oculto', !puedeCerrar);
+  $('btn-finalizar-resumen').textContent = esHoy ? 'Finalizar carga de hoy' : 'Finalizar carga de este día';
   const cont = $('resumen-lista');
   cont.innerHTML = '';
   corralesActivos().forEach((c, i) => {
@@ -1009,7 +1018,7 @@ function conectarEventos() {
     if (finalizada(estado.fecha)) { estado.corrigiendo = false; irAVista('resumen'); }
     else finalizarCarga();
   };
-  $('btn-finalizar-resumen').onclick = finalizarCarga;
+  $('btn-finalizar-resumen').onclick = () => finalizarCarga(estado.fecha);
   $('btn-agregar-admin').onclick = agregarAdmin;
   $('grafico-volver').onclick = () => irAVista('historial');
   document.querySelectorAll('#grafico-rangos button').forEach((b) => {

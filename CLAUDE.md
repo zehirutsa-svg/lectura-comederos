@@ -76,7 +76,12 @@ prepara sola (`asegurarConfigurado_`) la primera vez que se abre la URL o llega 
   corrales (los vacíos se saltean con las flechas, NO se deshabilitan: pedido explícito, van a
   ocuparse pronto) → "Finalizar carga de hoy" (avisa cuáles quedaron sin cargar). Tras finalizar,
   panel "Carga finalizada" y se corrige desde el Resumen tocando un corral. La finalización viaja
-  en la cola como `{tipo:'finalizar'}` y queda en la hoja **Cargas**.
+  en la cola como `{tipo:'finalizar'}` y queda en la hoja **Cargas**. Un **administrador** puede
+  además cerrar un día ANTERIOR que quedó abierto (desde el Resumen de ese día); ese cierre no
+  manda mail. El operario solo finaliza su propio día (si sincroniza tarde, igual avisa).
+- **Doble score (2 scores en un corral, ej. 2+2 = −10%)**: evaluado y descartado a propósito
+  (sesión 2026-09-26): casos muy excepcionales, complicaba la pantalla del operario. No proponerlo
+  de nuevo salvo que el usuario lo pida.
 - **Aviso por mail a TODOS los administradores**: (A) "Carga finalizada", en el momento en que
   llega la finalización; (B) "Corrección" si después se cambia algo de un día finalizado (lo junta
   el disparador cada 10 min, espera 5 min sin cambios). Más el botón "Compartir por WhatsApp"

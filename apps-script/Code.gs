@@ -440,8 +440,11 @@ function guardar_(body) {
         }
         finalizadas[fecha] = { fecha, usuario, ts };
         cargasNuevas.push({ fecha, usuario, horaTel, ts });
-        avisarFinalizada.push(fecha);
-        registrar('Finalizar carga', 'Aplicado');
+        // Un admin cerrando un día anterior que quedó abierto: sin mail (sería avisar algo viejo).
+        // Un operario que finaliza su día y sincroniza más tarde sí avisa (fecha = día del teléfono).
+        const cierreAtrasado = !!admin && fecha !== diaTelefono;
+        if (!cierreAtrasado) avisarFinalizada.push(fecha);
+        registrar('Finalizar carga', cierreAtrasado ? 'Aplicado (día anterior, sin aviso)' : 'Aplicado');
         resultados.push({ id: op.id, estado: 'aplicado' });
         return;
       }
