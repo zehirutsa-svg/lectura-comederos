@@ -81,6 +81,15 @@ prepara sola (`asegurarConfigurado_`) la primera vez que se abre la URL o llega 
   cuadriculado (falso) limpiado.
 - Fechas para mostrar: `26 set 2026` ("set", nunca "sep").
 
+## GitHub
+
+- Repo público `zehirutsa-svg/lectura-comederos`; GitHub Pages publica `main` / carpeta `docs`.
+- App publicada: **https://zehirutsa-svg.github.io/lectura-comederos/** (el link que se abre en
+  los teléfonos para instalarla).
+- Push con deploy key propia de este repo (`~/.ssh/github_comederos`, ya puesta en
+  `core.sshCommand` del repo local). La de estancia-app (`github_estancia`) NO sirve acá: las
+  deploy keys son de un solo repo.
+
 ## Publicar una versión nueva
 
 1. Cambiar lo que haga falta en `docs/`.
