@@ -1,14 +1,13 @@
 // Service Worker: guarda la app en el teléfono para que abra sin señal.
 // Al publicar una versión nueva, subir el número de CACHE para que los
 // teléfonos descarguen los archivos nuevos.
-const CACHE = 'comederos-v4';
+const CACHE = 'comederos-v5';
 const ARCHIVOS = [
   './',
   'index.html',
   'style.css',
   'config.js',
   'app.js',
-  
   'icons/logo.png',
   'icons/favicon.png',
   'icons/icon-192.png',
@@ -36,17 +35,19 @@ self.addEventListener('fetch', (e) => {
   // El manifest (nombre e ícono de la app) siempre de la red: si se sirviera la copia
   // guardada, Chrome instalaría con el nombre viejo. Sin señal no hace falta.
   if (url.pathname.endsWith('.webmanifest')) return;
-  // Abre al instante con lo guardado (con señal débil, esperar la red la haría
-  // lenta) y en segundo plano trae la versión nueva para la próxima vez.
-  e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then((guardado) => {
-      const deRed = fetch(e.request)
-        .then((r) => {
-          if (r.ok) { const copia = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copia)); }
-          return r;
-        })
-        .catch(() => guardado || caches.match('index.html'));
-      return guardado || deRed;
-    })
-  );
+  // Red primero, así cualquier apertura con señal muestra la última versión (antes
+  // se servía primero lo guardado y una versión vieja quedaba pegada). Sin señal, o
+  // si la red tarda más de 3 s (señal débil en el campo), se usa lo guardado.
+  e.respondWith((async () => {
+    try {
+      const r = await Promise.race([
+        fetch(e.request, { cache: 'no-cache' }),   // sin el caché de 10 min de GitHub Pages
+        new Promise((_, rechazar) => setTimeout(() => rechazar(new Error('lento')), 3000)),
+      ]);
+      if (r.ok) { const copia = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copia)); }
+      return r;
+    } catch (err) {
+      return (await caches.match(e.request, { ignoreSearch: true })) || caches.match('index.html');
+    }
+  })());
 });
