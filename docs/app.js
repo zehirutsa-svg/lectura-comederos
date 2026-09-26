@@ -14,7 +14,7 @@
 // (los vacíos se saltean con las flechas) y se finaliza. La finalización viaja en
 // la misma cola que los scores ({tipo:'finalizar'}) y dispara el mail a los admins.
 
-const VERSION = '1.2.1';
+const VERSION = '1.2.2';
 const PCT = { 1: -7, 2: -5, 3: -3, 4: -2, 5: 0, 6: 2, 7: 3, 8: 5, 9: 7 };
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -398,7 +398,7 @@ function renderMenu() {
   $('menu-usuario').textContent = usuario || '(sin nombre)';
   $('menu-admin-estado').textContent = !esAdmin() ? 'Desactivado'
     : 'Activado' + (adminInfo && adminInfo.nombre ? ' como ' + adminInfo.nombre : '') +
-      (adminInfo && adminInfo.principal ? ' (principal)' : '') + ': puede corregir cualquier día';
+      (adminInfo && adminInfo.principal ? ' (principal)' : '') + ': puede corregir cualquier registro';
   $('btn-admin').textContent = esAdmin() ? 'Salir del modo administrador' : 'Entrar con código';
   $('tarjeta-corrales').classList.toggle('oculto', !esAdmin());
   const principal = esAdmin() && adminInfo && adminInfo.principal;
@@ -776,7 +776,7 @@ async function crearCodigoAdmin() {
     icono: '🔑',
     titulo: 'Crear código de administrador',
     html: 'Todavía no hay código. Elegí uno de <b style="font-size:inherit">4 a 8 números</b>. ' +
-      'Con él vas a poder corregir cualquier día.',
+      'Con él vas a poder corregir cualquier registro.',
     input: { tipo: 'password', modo: 'numeric', placeholder: 'Código nuevo' },
     si: 'Seguir',
     validar: (v) => (/^\d{4,8}$/.test(v) ? '' : 'Tienen que ser de 4 a 8 números.'),
