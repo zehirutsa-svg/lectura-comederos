@@ -1,6 +1,6 @@
 {
   "name": "Lectura de Comederos",
-  "short_name": "Comederos",
+  "short_name": "Lectura Comederos",
   "description": "Carga del score de lectura de comederos por corral — Estancias La Prudencia y La Paciencia.",
   "lang": "es",
   "start_url": "./",
