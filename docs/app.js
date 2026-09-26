@@ -14,7 +14,7 @@
 // (los vacíos se saltean con las flechas) y se finaliza. La finalización viaja en
 // la misma cola que los scores ({tipo:'finalizar'}) y dispara el mail a los admins.
 
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 const PCT = { 1: -7, 2: -5, 3: -3, 4: -2, 5: 0, 6: 2, 7: 3, 8: 5, 9: 7 };
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -610,11 +610,16 @@ async function llamarUnaVez(payload) {
 }
 
 // Google a veces devuelve una página de error pasajera en vez de la respuesta:
-// se reintenta hasta 2 veces antes de darlo por fallado. Reenviar es seguro,
-// el script ignora un cambio que ya había recibido (mismo id).
+// se reintenta hasta 2 veces antes de darlo por fallado. Solo en pedidos que se
+// pueden repetir sin efecto doble (guardar: el script ignora un id ya recibido;
+// lecturas y verificaciones). Los cambios de administradores NO se reintentan:
+// si el primero llegó y solo falló la respuesta, el reintento duplicaba el alta.
+const REPETIBLES = new Set(['guardar', 'datos', 'verificarPin', 'admins', 'corrales']);
+
 async function llamar(payload) {
   let ultimoError;
-  for (let intento = 0; intento < 3; intento++) {
+  const intentos = REPETIBLES.has(payload.accion) ? 3 : 1;
+  for (let intento = 0; intento < intentos; intento++) {
     if (intento) await new Promise((res) => setTimeout(res, 1500 * intento));
     try {
       const j = await llamarUnaVez(payload);

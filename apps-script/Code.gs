@@ -274,6 +274,8 @@ function agregarAdmin_(body) {
   const d = validarDatosAdmin_(body.nombre, body.email);
   return conLock_(() => {
     const lista = admins_();
+    // Evita duplicados (ej. el mismo alta enviada dos veces por un reintento o un doble toque).
+    if (lista.some((a) => a.email === d.email)) throw new Error('ya hay un administrador con ese mail');
     const codigo = generarCodigo_(lista);
     const sal = nuevoId_();
     lista.push({ id: nuevoId_(), nombre: d.nombre, email: d.email, sal, hash: hash_(codigo, sal), principal: false });
@@ -289,6 +291,7 @@ function editarAdmin_(body) {
     const lista = admins_();
     const a = lista.find((x) => x.id === body.id);
     if (!a) throw new Error('ese administrador ya no existe');
+    if (lista.some((x) => x.id !== a.id && x.email === d.email)) throw new Error('ya hay otro administrador con ese mail');
     a.nombre = d.nombre;
     a.email = d.email;
     guardarAdmins_(lista);
