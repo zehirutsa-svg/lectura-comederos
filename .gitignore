@@ -1,0 +1,6 @@
+# Archivos de trabajo que no se publican
+*.xlsx
+Logo ZEHIRUT*.png
+desktop.ini
+.claude/settings.local.json
+node_modules/

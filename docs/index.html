@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lectura de Comederos</title>
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Comederos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="splash"><img src="icons/logo.png" alt=""><div>Lectura de Comederos</div></div>
+
+<header class="barra">
+  <span class="titulo">Lectura de Comederos</span>
+  <span id="estado-sync" class="sync"></span>
+</header>
+
+<div class="fecha-fila">
+  <button id="dia-ant" class="btn-nav chico" aria-label="Día anterior">‹</button>
+  <button id="fecha-txt" class="fecha-txt"></button>
+  <button id="dia-sig" class="btn-nav chico" aria-label="Día siguiente">›</button>
+</div>
+
+<main>
+  <!-- CARGAR -->
+  <section id="v-cargar" class="vista">
+    <div class="corral-fila">
+      <button id="corral-ant" class="btn-nav" aria-label="Corral anterior">‹</button>
+      <div class="corral-centro">
+        <div class="corral-palabra">CORRAL</div>
+        <div id="corral-num" class="corral-num">1</div>
+      </div>
+      <button id="corral-sig" class="btn-nav" aria-label="Corral siguiente">›</button>
+    </div>
+    <div id="score-actual" class="score-actual">—</div>
+    <div id="aviso-bloqueo" class="aviso-bloqueo oculto">Solo se puede modificar el día de hoy</div>
+    <div id="botones" class="botones"></div>
+    <button id="btn-borrar" class="btn-borrar">🗑 Borrar score</button>
+    <div id="progreso" class="progreso"></div>
+  </section>
+
+  <!-- RESUMEN -->
+  <section id="v-resumen" class="vista oculto">
+    <h2 id="resumen-titulo" class="subtitulo"></h2>
+    <div id="resumen-lista"></div>
+    <div class="acciones">
+      <button id="btn-whatsapp" class="btn-whatsapp">Compartir por WhatsApp</button>
+      <button id="btn-copiar" class="btn-secundario">Copiar texto</button>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section id="v-historial" class="vista oculto">
+    <h2 class="subtitulo">Historial</h2>
+    <p id="historial-nota" class="nota"></p>
+    <div class="tabla-scroll"><table id="historial-tabla" class="tabla"></table></div>
+    <button id="btn-mas-dias" class="btn-secundario">Ver 14 días más</button>
+  </section>
+
+  <!-- MENU -->
+  <section id="v-menu" class="vista oculto">
+    <img src="icons/logo.png" alt="Estancias La Prudencia - La Paciencia" class="logo-menu">
+    <div class="tarjeta">
+      <div class="etiqueta">Operario de este teléfono</div>
+      <div id="menu-usuario" class="valor"></div>
+      <button id="btn-cambiar-usuario" class="btn-secundario">Cambiar nombre</button>
+    </div>
+    <div class="tarjeta">
+      <div class="etiqueta">Modo administrador</div>
+      <div id="menu-admin-estado" class="valor"></div>
+      <button id="btn-admin" class="btn-secundario"></button>
+    </div>
+    <div id="tarjeta-corrales" class="tarjeta oculto">
+      <div class="etiqueta">Corrales</div>
+      <div id="lista-corrales"></div>
+      <button id="btn-agregar-corral" class="btn-secundario">+ Agregar corral</button>
+    </div>
+    <div class="tarjeta">
+      <div class="etiqueta">Sincronización</div>
+      <div id="menu-sync" class="valor chico"></div>
+      <button id="btn-sync" class="btn-secundario">Sincronizar ahora</button>
+    </div>
+    <p class="nota centro" id="version"></p>
+  </section>
+</main>
+
+<nav class="menu-inferior">
+  <button data-vista="cargar" class="activo"><span>✏️</span>Cargar</button>
+  <button data-vista="resumen"><span>📋</span>Resumen</button>
+  <button data-vista="historial"><span>📅</span>Historial</button>
+  <button data-vista="menu"><span>⚙️</span>Menú</button>
+</nav>
+
+<!-- Cartel de confirmación / ingreso de texto -->
+<div id="modal" class="modal oculto">
+  <div class="modal-caja">
+    <div id="modal-icono" class="modal-icono"></div>
+    <div id="modal-titulo" class="modal-titulo"></div>
+    <div id="modal-texto" class="modal-texto"></div>
+    <input id="modal-input" class="modal-input oculto" autocomplete="off">
+    <div id="modal-error" class="modal-error"></div>
+    <div class="modal-botones">
+      <button id="modal-no" class="btn-secundario">Cancelar</button>
+      <button id="modal-si" class="btn-primario">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast oculto"></div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
