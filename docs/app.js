@@ -14,7 +14,7 @@
 // (los vacíos se saltean con las flechas) y se finaliza. La finalización viaja en
 // la misma cola que los scores ({tipo:'finalizar'}) y dispara el mail a los admins.
 
-const VERSION = '1.2.3';
+const VERSION = '1.2.4';
 const PCT = { 1: -7, 2: -5, 3: -3, 4: -2, 5: 0, 6: 2, 7: 3, 8: 5, 9: 7 };
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -296,22 +296,27 @@ function render() {
 function renderCargar() {
   const f = estado.fecha;
   const esHoy = f === hoyISO();
-  // Hoy se trabaja por "carga": antes de iniciar y después de finalizar se muestra un panel.
+  // Se trabaja por "carga": hoy, antes de iniciar, se muestra el panel de inicio; cualquier
+  // día ya finalizado (hoy o anterior) muestra el panel de finalizada, salvo mientras se corrige.
   const verIniciar = esHoy && !finalizada(f) && !empezada(f);
-  const verFinalizada = esHoy && finalizada(f) && !estado.corrigiendo;
+  const verFinalizada = finalizada(f) && !estado.corrigiendo;
   $('panel-iniciar').classList.toggle('oculto', !verIniciar);
   $('panel-finalizada').classList.toggle('oculto', !verFinalizada);
   $('zona-carga').classList.toggle('oculto', verIniciar || verFinalizada);
   if (verFinalizada) {
     const info = finalizadas[f];
+    $('finalizada-titulo').textContent = esHoy ? 'Carga de hoy finalizada' : 'Carga del ' + fechaLarga(f) + ' finalizada';
     $('finalizada-texto').innerHTML = 'Finalizada por <b>' + (info.usuario || '—') + '</b> a las <b>' + horaDe(info.ts) +
       '</b>.<br>' + cargadosDe(f).length + ' de ' + corralesActivos().length + ' corrales cargados.';
+    $('btn-corregir').classList.toggle('oculto', !puedeEditar(f));   // un operario no corrige días anteriores
   }
   if (verIniciar || verFinalizada) return;
-  // Abajo: "Finalizar" mientras se carga hoy; "Listo" si se está corrigiendo un día finalizado.
+  // Abajo: "Listo" si se está corrigiendo un día finalizado; si no, "Finalizar" (hoy, o un día
+  // anterior abierto para un administrador).
   const bFin = $('btn-finalizar');
-  bFin.classList.toggle('oculto', !esHoy);
-  bFin.textContent = finalizada(f) ? 'Listo, volver al resumen' : 'Finalizar carga de hoy';
+  bFin.classList.toggle('oculto', !(finalizada(f) || esHoy || esAdmin()));
+  bFin.textContent = finalizada(f) ? 'Listo, volver al resumen'
+    : esHoy ? 'Finalizar carga de hoy' : 'Finalizar carga de este día';
 
   const lista = corralesActivos();
   if (!lista.length) { $('corral-num').textContent = '—'; $('botones').innerHTML = ''; return; }
@@ -1016,7 +1021,7 @@ function conectarEventos() {
   $('btn-corregir').onclick = () => { estado.corrigiendo = true; estado.idx = 0; render(); };
   $('btn-finalizar').onclick = () => {
     if (finalizada(estado.fecha)) { estado.corrigiendo = false; irAVista('resumen'); }
-    else finalizarCarga();
+    else finalizarCarga(estado.fecha);
   };
   $('btn-finalizar-resumen').onclick = () => finalizarCarga(estado.fecha);
   $('btn-agregar-admin').onclick = agregarAdmin;
