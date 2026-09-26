@@ -40,6 +40,11 @@ button:disabled { cursor: default; }
 .sync.pend { color: #ffd166; }
 .sync.off { color: #bbb; }
 
+.banner-instalar {
+  width: 100%; min-height: 54px; border: none; border-bottom: 3px solid var(--negro);
+  background: #FFD84D; font-size: 19px; font-weight: 800;
+}
+
 /* Fila de fecha */
 .fecha-fila {
   display: flex; align-items: center; justify-content: center; gap: 8px;

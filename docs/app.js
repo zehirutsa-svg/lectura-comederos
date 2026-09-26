@@ -10,7 +10,7 @@
 // administrador (con código) puede tocar cualquier día. El script de Google
 // vuelve a chequear lo mismo, así que no depende solo de la app.
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const PCT = { 1: -7, 2: -5, 3: -3, 4: -2, 5: 0, 6: 2, 7: 3, 8: 5, 9: 7 };
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -220,6 +220,7 @@ function render() {
   $('dia-sig').disabled = esHoy;
 
   renderSync();
+  renderInstalar();
   if (estado.vista === 'cargar') renderCargar();
   else if (estado.vista === 'resumen') renderResumen();
   else if (estado.vista === 'historial') renderHistorial();
@@ -559,6 +560,35 @@ async function agregarCorral() {
   render();
 }
 
+// ---------------------------------------------------------------- instalar
+// Chrome no siempre muestra solo el cartel de instalar: se guarda su evento y se
+// ofrece un botón propio. En iPhone no hay evento, se explica el paso a mano.
+let eventoInstalar = null;
+const instalada = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const esIPhone = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+function renderInstalar() {
+  $('btn-instalar').classList.toggle('oculto', instalada() || !(eventoInstalar || esIPhone()));
+}
+
+async function instalar() {
+  if (eventoInstalar) {
+    eventoInstalar.prompt();
+    const r = await eventoInstalar.userChoice;
+    if (r.outcome === 'accepted') eventoInstalar = null;
+    renderInstalar();
+    return;
+  }
+  cartel({
+    icono: '📲', titulo: 'Instalar en iPhone', no: '', si: 'Entendido',
+    html: 'Abrí esta página en <b style="font-size:inherit">Safari</b>, tocá el botón de compartir ' +
+      '(el cuadrado con la flecha) y elegí <b style="font-size:inherit">Agregar a inicio</b>.',
+  });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); eventoInstalar = e; renderInstalar(); });
+window.addEventListener('appinstalled', () => { eventoInstalar = null; renderInstalar(); toast('App instalada'); });
+
 // ---------------------------------------------------------------- arranque
 function conectarEventos() {
   document.querySelectorAll('.menu-inferior button').forEach((b) => { b.onclick = () => irAVista(b.dataset.vista); });
@@ -568,6 +598,7 @@ function conectarEventos() {
   $('dia-sig').onclick = () => irAFecha(sumarDias(estado.fecha, 1));
   $('fecha-txt').onclick = () => irAFecha(hoyISO());
   $('btn-borrar').onclick = borrarScore;
+  $('btn-instalar').onclick = instalar;
   $('btn-whatsapp').onclick = () => {
     window.open('https://wa.me/?text=' + encodeURIComponent(textoWhatsApp(estado.fecha)), '_blank');
   };
@@ -600,7 +631,15 @@ function iniciar() {
     if (!usuario) pedirNombre(true);
   }, 800);
   sincronizar();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) {
+    // Si llega una versión nueva mientras la app está abierta, recargar una vez para mostrarla.
+    const habiaVersion = !!navigator.serviceWorker.controller;
+    let recargada = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (habiaVersion && !recargada) { recargada = true; location.reload(); }
+    });
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 }
 
 iniciar();

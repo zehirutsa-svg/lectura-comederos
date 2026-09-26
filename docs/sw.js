@@ -1,7 +1,7 @@
 // Service Worker: guarda la app en el teléfono para que abra sin señal.
 // Al publicar una versión nueva, subir el número de CACHE para que los
 // teléfonos descarguen los archivos nuevos.
-const CACHE = 'comederos-v1';
+const CACHE = 'comederos-v2';
 const ARCHIVOS = [
   './',
   'index.html',
