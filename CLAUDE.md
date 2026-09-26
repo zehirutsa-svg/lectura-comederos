@@ -72,9 +72,24 @@ prepara sola (`asegurarConfigurado_`) la primera vez que se abre la URL o llega 
 - **Datos en Google Sheet** de la cuenta **zehirutsa@gmail.com** (dueña). Hojas: Planilla (vista
   tipo Excel), Registro (log de todo cambio, nunca se borra), Corrales, Datos (valor vigente).
   Conflictos: queda el cambio más reciente (por marca de tiempo del teléfono).
-- **Aviso**: (A) botón "Compartir por WhatsApp" con el día + tabla de últimos 7 días, y
-  (B) mail automático a zehirutsa@gmail.com (disparador cada 10 min; espera 5 min sin cambios
-  para no mandar un mail a mitad de la carga). Los cambios del admin no generan mail.
+- **Carga del día** (v1.2.0): hoy se trabaja como una carga — panel "Iniciar carga de hoy" →
+  corrales (los vacíos se saltean con las flechas, NO se deshabilitan: pedido explícito, van a
+  ocuparse pronto) → "Finalizar carga de hoy" (avisa cuáles quedaron sin cargar). Tras finalizar,
+  panel "Carga finalizada" y se corrige desde el Resumen tocando un corral. La finalización viaja
+  en la cola como `{tipo:'finalizar'}` y queda en la hoja **Cargas**.
+- **Aviso por mail a TODOS los administradores**: (A) "Carga finalizada", en el momento en que
+  llega la finalización; (B) "Corrección" si después se cambia algo de un día finalizado (lo junta
+  el disparador cada 10 min, espera 5 min sin cambios). Más el botón "Compartir por WhatsApp"
+  (manual). Notificación push propia de la app: descartada — Apps Script no puede firmar Web Push
+  (VAPID/ES256); necesitaría un servidor aparte. El usuario lo entendió y eligió mail.
+- **Administradores** (v1.2.0): cada uno con su propio código de 6 números, generado por el
+  script y mostrado UNA sola vez. Solo el **principal** (el dueño) agrega/edita/quita admins y
+  regenera códigos, desde Menú → Administradores. Guardados en la propiedad `ADMINS` (nombre,
+  mail, sal, hash SHA-256; nunca el código). Freno: 15 códigos errados en 10 min bloquea todo
+  código por 10 min (CacheService). Al abrir la app se re-verifica el código guardado; si el
+  principal lo quitó, el teléfono sale del modo admin. El código único de la v1.1 (`PIN_ADMIN`)
+  se migró solo a principal; toma el nombre del operario del teléfono la primera vez que entra.
+  Emergencia (principal perdió su código): ejecutar `reiniciarAdministradores` en el editor.
 - **Nombre del operario**: se pide una vez por teléfono y queda en cada registro.
 - **Gráfico por corral** (v1.1.0): en Historial se toca el nombre del corral → línea del score
   día por día (14/30/60 días), puntos con el color de su botón, línea de referencia en 5 (0%),

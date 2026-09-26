@@ -104,6 +104,35 @@ main { flex: 1; overflow-y: auto; }
 .btn-borrar.invisible { visibility: hidden; }
 .progreso { text-align: center; font-size: 17px; color: #333; padding-top: 10px; }
 
+/* Iniciar / finalizar la carga del día */
+.panel-estado { text-align: center; padding: 28px 8px; }
+.panel-icono { font-size: 56px; line-height: 1; }
+.panel-titulo { font-size: 28px; font-weight: 800; margin: 10px 0 6px; }
+.panel-texto { font-size: 19px; line-height: 1.45; margin: 0 0 22px; color: #222; }
+.btn-grande {
+  width: 100%; min-height: 76px; border: 3px solid var(--negro); border-radius: 16px;
+  background: var(--negro); color: #fff; font-size: 24px; font-weight: 800;
+}
+.btn-secundario.ancho { width: 100%; margin-top: 12px; min-height: 60px; font-size: 20px; }
+.btn-finalizar {
+  width: 100%; min-height: 62px; margin-top: 14px; border: 3px solid var(--negro); border-radius: 14px;
+  background: var(--negro); color: #fff; font-size: 21px; font-weight: 800;
+}
+.resumen-estado {
+  text-align: center; font-size: 18px; font-weight: 700; padding: 10px; margin-bottom: 8px;
+  border: 2px solid var(--negro); border-radius: 12px;
+}
+.resumen-estado.ok { background: #E4F4D4; }
+.resumen-estado.curso { background: var(--resaltado); }
+
+/* Administradores */
+.fila-admin { border-top: 1px solid var(--gris-claro); padding: 10px 0; }
+.fila-admin .nombre { font-size: 19px; font-weight: 700; }
+.fila-admin .mail { font-size: 15px; color: var(--gris); word-break: break-all; }
+.fila-admin .botones-admin { display: flex; gap: 6px; margin-top: 8px; }
+.fila-admin .botones-admin button { flex: 1; min-height: 44px; font-size: 15px; padding: 0 6px; border-width: 2px; }
+.codigo-grande { display: block; font-size: 44px; font-weight: 800; letter-spacing: 6px; margin: 10px 0; }
+
 /* Resumen */
 .subtitulo { font-size: 22px; margin: 6px 0 10px; text-align: center; }
 .fila-resumen {
@@ -211,3 +240,11 @@ main { flex: 1; overflow-y: auto; }
   background: var(--negro); color: #fff; font-size: 18px; font-weight: 600;
   padding: 12px 18px; border-radius: 12px; max-width: 90vw; text-align: center;
 }
+.marca-principal {
+  font-size: 12px; font-weight: 800; letter-spacing: 1px; vertical-align: middle;
+  background: var(--negro); color: #fff; border-radius: 6px; padding: 2px 6px;
+}
+/* En las filas de corrales y admins los botones no ocupan todo el ancho de la tarjeta. */
+.tarjeta .fila-corral button { width: auto; min-width: 150px; margin-top: 0; }
+.tarjeta .fila-corral span { white-space: nowrap; }
+.tarjeta .botones-admin button { width: auto; margin-top: 0; }

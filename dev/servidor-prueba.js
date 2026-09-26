@@ -87,7 +87,20 @@ const libro = {
 };
 const contexto = {
   SpreadsheetApp: { getActive: () => libro },
-  Utilities: { formatDate },
+  Utilities: {
+    formatDate,
+    DigestAlgorithm: { SHA_256: 'sha256' },
+    Charset: { UTF_8: 'utf8' },
+    // Google devuelve bytes con signo (-128..127).
+    computeDigest: (alg, valor) => [...require('crypto').createHash(alg).update(valor, 'utf8').digest()].map((b) => (b > 127 ? b - 256 : b)),
+    getUuid: () => require('crypto').randomUUID(),
+  },
+  CacheService: {
+    getScriptCache: () => ({
+      get: (k) => (cache[k] && cache[k].hasta > Date.now() ? cache[k].v : null),
+      put: (k, v, seg) => { cache[k] = { v, hasta: Date.now() + seg * 1000 }; },
+    }),
+  },
   LockService: { getScriptLock: () => ({ waitLock() {}, tryLock: () => true, releaseLock() {} }) },
   ContentService: {
     MimeType: { JSON: 'json' },
@@ -110,9 +123,11 @@ const contexto = {
   HtmlService: { createHtmlOutput: (h) => ({ html: h, setTitle() { return this; } }) },
   console,
 };
-// Sin código de administrador al arrancar, como en Google recién instalado.
-// Para arrancar con uno ya definido: node dev/servidor-prueba.js 8765 1234
+// Sin administradores al arrancar, como en Google recién instalado. Con un código
+// (node dev/servidor-prueba.js 8765 1234) arranca como la versión anterior con ese
+// PIN_ADMIN, que la migración convierte en el administrador principal.
 const propiedades = process.argv[3] ? { PIN_ADMIN: process.argv[3] } : {};
+const cache = {};
 vm.createContext(contexto);
 const codigo = fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8');
 vm.runInContext(codigo + '\nthis.__api = { doPost, doGet, enviarAvisos };', contexto);
@@ -137,6 +152,11 @@ http.createServer((req, res) => {
   if (url.pathname === '/_hojas') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(Object.fromEntries(hojas.map((h) => [h.nombre, h.celdas])), null, 1));
+    return;
+  }
+  if (url.pathname === '/_mails') {          // todos los mails "enviados" hasta ahora
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(mails.map((m) => 'PARA: ' + m.to + '\nASUNTO: ' + m.subject + '\n\n' + m.body).join('\n\n=========\n\n'));
     return;
   }
   if (url.pathname === '/_avisos') {

@@ -34,6 +34,22 @@
 <main>
   <!-- CARGAR -->
   <section id="v-cargar" class="vista">
+    <!-- Antes de empezar el día -->
+    <div id="panel-iniciar" class="panel-estado oculto">
+      <div class="panel-icono">📋</div>
+      <div class="panel-titulo">Carga de hoy</div>
+      <p class="panel-texto">Todavía no se empezó la lectura de comederos de hoy.</p>
+      <button id="btn-iniciar" class="btn-grande">Iniciar carga de hoy</button>
+    </div>
+    <!-- Día ya finalizado -->
+    <div id="panel-finalizada" class="panel-estado oculto">
+      <div class="panel-icono">✅</div>
+      <div class="panel-titulo">Carga de hoy finalizada</div>
+      <p id="finalizada-texto" class="panel-texto"></p>
+      <button id="btn-ver-resumen" class="btn-grande">Ver resumen</button>
+      <button id="btn-corregir" class="btn-secundario ancho">Corregir un corral</button>
+    </div>
+    <div id="zona-carga">
     <div class="corral-fila">
       <button id="corral-ant" class="btn-nav" aria-label="Corral anterior">‹</button>
       <div class="corral-centro">
@@ -47,12 +63,16 @@
     <div id="botones" class="botones"></div>
     <button id="btn-borrar" class="btn-borrar">🗑 Borrar score</button>
     <div id="progreso" class="progreso"></div>
+    <button id="btn-finalizar" class="btn-finalizar">Finalizar carga de hoy</button>
+    </div>
   </section>
 
   <!-- RESUMEN -->
   <section id="v-resumen" class="vista oculto">
     <h2 id="resumen-titulo" class="subtitulo"></h2>
+    <div id="resumen-estado" class="resumen-estado"></div>
     <div id="resumen-lista"></div>
+    <button id="btn-finalizar-resumen" class="btn-finalizar oculto">Finalizar carga de hoy</button>
     <div class="acciones">
       <button id="btn-whatsapp" class="btn-whatsapp">Compartir por WhatsApp</button>
       <button id="btn-copiar" class="btn-secundario">Copiar texto</button>
@@ -96,6 +116,12 @@
       <div class="etiqueta">Modo administrador</div>
       <div id="menu-admin-estado" class="valor"></div>
       <button id="btn-admin" class="btn-secundario"></button>
+    </div>
+    <div id="tarjeta-admins" class="tarjeta oculto">
+      <div class="etiqueta">Administradores</div>
+      <p class="nota">Cada uno tiene su propio código. Solo vos podés agregar o quitar.</p>
+      <div id="lista-admins"></div>
+      <button id="btn-agregar-admin" class="btn-secundario">+ Agregar administrador</button>
     </div>
     <div id="tarjeta-corrales" class="tarjeta oculto">
       <div class="etiqueta">Corrales</div>
