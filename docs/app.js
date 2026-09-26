@@ -376,7 +376,7 @@ async function copiarTexto(texto) {
 }
 
 // ---------------------------------------------------------------- sincronización
-async function llamar(payload) {
+async function llamarUnaVez(payload) {
   const r = await fetch(SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // evita el "preflight" CORS con Apps Script
@@ -384,9 +384,27 @@ async function llamar(payload) {
     redirect: 'follow',
   });
   if (!r.ok) throw new Error('HTTP ' + r.status);
-  const j = await r.json();
-  if (!j.ok) throw new Error(j.error || 'error del servidor');
-  return j;
+  const texto = await r.text();
+  try { return JSON.parse(texto); } catch (e) { throw new Error('respuesta inesperada de Google'); }
+}
+
+// Google a veces devuelve una página de error pasajera en vez de la respuesta:
+// se reintenta hasta 2 veces antes de darlo por fallado. Reenviar es seguro,
+// el script ignora un cambio que ya había recibido (mismo id).
+async function llamar(payload) {
+  let ultimoError;
+  for (let intento = 0; intento < 3; intento++) {
+    if (intento) await new Promise((res) => setTimeout(res, 1500 * intento));
+    try {
+      const j = await llamarUnaVez(payload);
+      if (!j.ok) throw Object.assign(new Error(j.error || 'error del servidor'), { definitivo: true });
+      return j;
+    } catch (e) {
+      ultimoError = e;
+      if (e.definitivo) break;
+    }
+  }
+  throw ultimoError;
 }
 
 function aplicarDatosServidor(d, desde) {
