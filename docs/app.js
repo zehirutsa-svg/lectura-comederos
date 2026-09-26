@@ -10,7 +10,7 @@
 // administrador (con código) puede tocar cualquier día. El script de Google
 // vuelve a chequear lo mismo, así que no depende solo de la app.
 
-const VERSION = '1.0.2';
+const VERSION = '1.0.3';
 const PCT = { 1: -7, 2: -5, 3: -3, 4: -2, 5: 0, 6: 2, 7: 3, 8: 5, 9: 7 };
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];

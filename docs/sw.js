@@ -1,14 +1,14 @@
 // Service Worker: guarda la app en el teléfono para que abra sin señal.
 // Al publicar una versión nueva, subir el número de CACHE para que los
 // teléfonos descarguen los archivos nuevos.
-const CACHE = 'comederos-v3';
+const CACHE = 'comederos-v4';
 const ARCHIVOS = [
   './',
   'index.html',
   'style.css',
   'config.js',
   'app.js',
-  'manifest.webmanifest',
+  
   'icons/logo.png',
   'icons/favicon.png',
   'icons/icon-192.png',
@@ -33,6 +33,9 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   // Solo archivos propios de la app; lo del Google Sheet va directo a la red.
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // El manifest (nombre e ícono de la app) siempre de la red: si se sirviera la copia
+  // guardada, Chrome instalaría con el nombre viejo. Sin señal no hace falta.
+  if (url.pathname.endsWith('.webmanifest')) return;
   // Abre al instante con lo guardado (con señal débil, esperar la red la haría
   // lenta) y en segundo plano trae la versión nueva para la próxima vez.
   e.respondWith(
