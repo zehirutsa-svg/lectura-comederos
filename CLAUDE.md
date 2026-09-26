@@ -22,12 +22,38 @@ docs/                 la app (GitHub Pages publica esta carpeta — por eso se l
   config.js           SCRIPT_URL = URL del Apps Script (vacía = solo guarda en el teléfono)
   sw.js               service worker (offline). Subir CACHE ('comederos-vN') en cada publicación
   manifest.webmanifest, icons/   ícono = logo completo de ZEHIRUT (ver abajo)
-apps-script/Code.gs   backend: se pega en el Apps Script del Google Sheet (ver GUIA_GOOGLE_SHEET.md)
+apps-script/          backend (Code.gs + appsscript.json), se sube con clasp (ver abajo)
+.clasp.json           scriptId del Apps Script y parentId del Google Sheet
 dev/servidor-prueba.js  servidor local de prueba: sirve docs/ y corre Code.gs con un Sheet falso
 ```
 
-Probar local: `node dev/servidor-prueba.js 8765` → <http://localhost:8765> (código admin de
-prueba: `1234`; `/_hojas` muestra el Sheet simulado, `/_avisos` fuerza el mail).
+Probar local: `node dev/servidor-prueba.js 8765` → <http://localhost:8765> (arranca sin código
+de admin, como Google recién instalado — la app pide crearlo; `node dev/servidor-prueba.js 8765 1234`
+arranca con uno. `/_hojas` muestra el Sheet simulado, `/_avisos` fuerza el mail). La app de
+prueba usa el Sheet simulado (el servidor reemplaza `config.js`), nunca el real.
+
+## Google (clasp, cuenta zehirutsa@gmail.com)
+
+clasp (global, v3) ya está logueado con zehirutsa@gmail.com en esta compu — mismo esquema que
+el proyecto ZehirutApp. Todo se hace desde acá, sin copiar/pegar en el editor:
+
+- Google Sheet "Lectura de Comederos": `https://docs.google.com/spreadsheets/d/1z9la4M8hI7TwU3i1u5RfGCJaITeA7-ZfNITvWcGPwkk`
+- Script (ligado a esa planilla): `https://script.google.com/d/1EbFGrUItGaYTkTEf8_ineHYmbR3kXnMAJvOggIQBSUy3KopYW8aU8tk6/edit`
+- Implementación web "Lectura de Comederos": `AKfycbwOYRU_qkLYae8BLCjr_3FkQiXPtNT4lPVeH-fHIR6_C7f_BLTJ3qgSGJHRWsO1tB9Pfg`
+  (su URL `/exec` está en `docs/config.js`). Ejecuta como el dueño, acceso anónimo (los
+  teléfonos no se loguean en Google).
+
+Cambiar el script: editar `apps-script/Code.gs` → `clasp push --force` →
+`clasp update-deployment AKfycbwOYRU_qkLYae8BLCjr_3FkQiXPtNT4lPVeH-fHIR6_C7f_BLTJ3qgSGJHRWsO1tB9Pfg -d "..."`
+(actualizar ESA implementación, no crear otra: la URL cambiaría y habría que republicar la app).
+Si se agrega un permiso nuevo en `oauthScopes`, el dueño tiene que volver a autorizar abriendo
+la URL `/exec` en el navegador.
+
+**Nada privado en el repo (es público)**: el código de administrador se crea desde la app la
+primera vez y vive en las propiedades del script (`PIN_ADMIN`); para cambiarlo, ejecutar
+`borrarCodigoAdmin` en el editor y crear uno nuevo desde la app. El aviso va al mail del dueño
+(`Session.getEffectiveUser`), salvo que se defina la propiedad `EMAIL_AVISO`. La planilla se
+prepara sola (`asegurarConfigurado_`) la primera vez que se abre la URL o llega un pedido.
 
 ## Decisiones tomadas con el usuario (no volver a preguntar)
 
@@ -40,8 +66,8 @@ prueba: `1234`; `/_hojas` muestra el Sheet simulado, `/_avisos` fuerza el mail).
 - **Modificar** un score ya cargado → cartel de confirmación con valor anterior y nuevo.
   **Borrar** → botón rojo (solo visible si hay score), con confirmación; el corral queda "—".
 - **Permisos**: el operario carga/modifica/borra solo el día de HOY (según la hora de su teléfono
-  al hacer el cambio, así funciona offline); el administrador (código `PIN_ADMIN` del script)
-  corrige cualquier día. Lo valida el script, no solo la app.
+  al hacer el cambio, así funciona offline); el administrador (código guardado en Google, ver
+  arriba) corrige cualquier día. Lo valida el script, no solo la app.
 - **Datos en Google Sheet** de la cuenta **zehirutsa@gmail.com** (dueña). Hojas: Planilla (vista
   tipo Excel), Registro (log de todo cambio, nunca se borra), Corrales, Datos (valor vigente).
   Conflictos: queda el cambio más reciente (por marca de tiempo del teléfono).
@@ -62,5 +88,4 @@ prueba: `1234`; `/_hojas` muestra el Sheet simulado, `/_avisos` fuerza el mail).
 3. Commit + push a `main`: GitHub Pages publica solo en ~1 minuto. Los teléfonos toman la
    versión nueva la segunda vez que abren la app con señal.
 
-Si se cambia `apps-script/Code.gs`: pegarlo en el editor de Apps Script y publicar una versión
-nueva de la MISMA implementación (ver GUIA_GOOGLE_SHEET.md), para que la URL no cambie.
+Si se cambia `apps-script/Code.gs`: ver "Google (clasp...)" arriba.

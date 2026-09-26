@@ -18,13 +18,14 @@
  *   - Con el código de administrador se puede corregir cualquier día.
  *   - Si dos cambios tocan el mismo corral y día, queda el más reciente.
  *
- * Instalación: ver GUIA_GOOGLE_SHEET.md.
+ * Se sube con clasp (ver CLAUDE.md). La primera vez que se abre la URL del
+ * script, el dueño autoriza los permisos y la planilla se prepara sola.
+ *
+ * Nada privado vive en este archivo (el repositorio es público): el código de
+ * administrador se define desde la app la primera vez y queda en las
+ * propiedades del script; el aviso va al mail del dueño de la planilla, salvo
+ * que se defina la propiedad EMAIL_AVISO (varios mails separados por coma).
  */
-
-// ============ CONFIGURACIÓN — completar antes de ejecutar "configurar" ============
-const PIN_ADMIN = 'CAMBIAR';                 // código de administrador (solo números, ej. '4821')
-const EMAIL_AVISO = 'zehirutsa@gmail.com';   // a quién avisar (varios: separar con coma)
-// =================================================================================
 
 const ZONA = 'America/Asuncion';
 const CORRALES_INICIALES = 12;
@@ -36,11 +37,17 @@ const COLS_DATOS = ['Clave', 'Fecha', 'Corral', 'Score', 'Marca de tiempo', 'Usu
 const COLS_REGISTRO = ['Recibido', 'Fecha lectura', 'Corral', 'Score', 'Lectura', 'Acción', 'Usuario', 'Hora en el teléfono', 'Resultado'];
 
 // ---------------------------------------------------------------- instalación
-/** Ejecutar UNA vez desde el editor (Ejecutar ▶ configurar). Se puede repetir sin problema. */
+const props_ = () => PropertiesService.getScriptProperties();
+
+/** Prepara la planilla la primera vez (la llaman doGet/doPost solas). */
+function asegurarConfigurado_() {
+  if (props_().getProperty('CONFIGURADO') === 'si') return;
+  configurar();
+  props_().setProperty('CONFIGURADO', 'si');
+}
+
+/** Arma hojas, corrales iniciales y el disparador del aviso. Se puede repetir sin problema. */
 function configurar() {
-  if (PIN_ADMIN === 'CAMBIAR' || !/^\d{4,8}$/.test(PIN_ADMIN)) {
-    throw new Error('Primero poné un código de administrador de 4 a 8 números en PIN_ADMIN (arriba de todo).');
-  }
   const ss = SpreadsheetApp.getActive();
   ss.setSpreadsheetTimeZone(ZONA);
   const planilla = hoja_(ss, 'Planilla', null);
@@ -79,8 +86,15 @@ function hoja_(ss, nombre, encabezado) {
 }
 
 // ---------------------------------------------------------------- web (lo que llama la app)
+/** Abrir la URL en el navegador: la primera vez prepara la planilla y confirma que anda. */
 function doGet() {
-  return json_({ ok: true, app: 'Lectura de Comederos' });
+  asegurarConfigurado_();
+  const url = SpreadsheetApp.getActive().getUrl();
+  return HtmlService.createHtmlOutput(
+    '<div style="font-family:sans-serif;font-size:20px;padding:24px">' +
+    '<p>✓ <b>Lectura de Comederos</b> está funcionando.</p>' +
+    '<p><a href="' + url + '" target="_blank">Abrir la planilla</a></p></div>')
+    .setTitle('Lectura de Comederos');
 }
 
 function doPost(e) {
@@ -88,10 +102,12 @@ function doPost(e) {
   try { body = JSON.parse(e.postData.contents); }
   catch (err) { return json_({ ok: false, error: 'pedido inválido' }); }
   try {
+    asegurarConfigurado_();
     switch (body.accion) {
       case 'guardar': return json_(guardar_(body));
       case 'datos': return json_(datos_(body));
-      case 'verificarPin': return json_({ ok: true, valido: esAdmin_(body.pin) });
+      case 'verificarPin': return json_({ ok: true, valido: esAdmin_(body.pin), definido: !!pinGuardado_() });
+      case 'definirPin': return json_(definirPin_(body));
       case 'corrales': return json_(guardarCorrales_(body));
       default: return json_({ ok: false, error: 'acción desconocida' });
     }
@@ -104,8 +120,36 @@ function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 
+const pinGuardado_ = () => props_().getProperty('PIN_ADMIN');
+
 function esAdmin_(pin) {
-  return PIN_ADMIN !== 'CAMBIAR' && !!pin && String(pin) === String(PIN_ADMIN);
+  const guardado = pinGuardado_();
+  return !!guardado && !!pin && String(pin) === guardado;
+}
+
+/** Solo funciona si todavía no hay código: el primero que lo define desde la app queda. */
+function definirPin_(body) {
+  const pin = String(body.pin || '');
+  if (!/^\d{4,8}$/.test(pin)) return { ok: false, error: 'el código tiene que ser de 4 a 8 números' };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    if (pinGuardado_()) return { ok: false, error: 'ya hay un código de administrador definido' };
+    props_().setProperty('PIN_ADMIN', pin);
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Para cambiar el código: borrar la propiedad PIN_ADMIN (Configuración del proyecto → Propiedades
+ *  del script) o ejecutar esta función desde el editor; después se define uno nuevo desde la app. */
+function borrarCodigoAdmin() {
+  props_().deleteProperty('PIN_ADMIN');
+}
+
+function emailAviso_() {
+  return props_().getProperty('EMAIL_AVISO') || Session.getEffectiveUser().getEmail();
 }
 
 // ---------------------------------------------------------------- lectura / escritura de "Datos"
@@ -327,7 +371,7 @@ function enviarAvisos() {
       if (ahora - ultimo < 5 * 60 * 1000) return;
       const texto = textoResumen_(mapa, corrales, fecha);
       MailApp.sendEmail({
-        to: EMAIL_AVISO,
+        to: emailAviso_(),
         subject: 'Lectura de Comederos – ' + fechaLarga_(fecha),
         body: texto + '\n\nPlanilla: ' + ss.getUrl(),
         htmlBody: '<pre style="font-family:Consolas,Menlo,monospace;font-size:15px">' +

@@ -469,6 +469,13 @@ async function alternarAdmin() {
     if (ok) { pinAdmin = ''; guardarTodo(); irAFecha(hoyISO()); render(); }
     return;
   }
+  if (!SCRIPT_URL) { toast('El Google Sheet todavía no está configurado'); return; }
+  if (!navigator.onLine) { toast('Hace falta señal para entrar como administrador'); return; }
+  let definido;
+  try { definido = (await llamar({ accion: 'verificarPin', pin: '' })).definido; }
+  catch (e) { toast('No se pudo conectar: ' + e.message); return; }
+  if (!definido) { await crearCodigoAdmin(); return; }
+
   const pin = await cartel({
     icono: '🔑',
     titulo: 'Modo administrador',
@@ -477,8 +484,6 @@ async function alternarAdmin() {
     si: 'Entrar',
     validar: async (v) => {
       if (!v) return 'Ingresá el código.';
-      if (!SCRIPT_URL) return 'Primero hay que configurar el Google Sheet.';
-      if (!navigator.onLine) return 'Hace falta señal para verificar el código.';
       try {
         const r = await llamar({ accion: 'verificarPin', pin: v });
         return r.valido ? '' : 'Código incorrecto.';
@@ -486,6 +491,33 @@ async function alternarAdmin() {
     },
   });
   if (pin) { pinAdmin = pin; guardarTodo(); toast('Modo administrador activado'); render(); }
+}
+
+// La primera vez no hay código: se crea desde acá y queda guardado en Google.
+async function crearCodigoAdmin() {
+  const pin = await cartel({
+    icono: '🔑',
+    titulo: 'Crear código de administrador',
+    html: 'Todavía no hay código. Elegí uno de <b style="font-size:inherit">4 a 8 números</b>. ' +
+      'Con él vas a poder corregir cualquier día.',
+    input: { tipo: 'password', modo: 'numeric', placeholder: 'Código nuevo' },
+    si: 'Seguir',
+    validar: (v) => (/^\d{4,8}$/.test(v) ? '' : 'Tienen que ser de 4 a 8 números.'),
+  });
+  if (!pin) return;
+  const ok = await cartel({
+    icono: '🔑',
+    titulo: 'Repetí el código',
+    html: 'Para confirmar, escribilo otra vez.',
+    input: { tipo: 'password', modo: 'numeric', placeholder: 'Código' },
+    si: 'Guardar',
+    validar: async (v) => {
+      if (v !== pin) return 'No coincide con el anterior.';
+      try { await llamar({ accion: 'definirPin', pin }); return ''; }
+      catch (e) { return 'No se pudo guardar: ' + e.message; }
+    },
+  });
+  if (ok) { pinAdmin = pin; guardarTodo(); toast('Código creado. Modo administrador activado'); render(); }
 }
 
 function cambiarCorral(numero) {

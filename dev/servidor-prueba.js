@@ -99,14 +99,25 @@ const contexto = {
     newTrigger: () => ({ timeBased() { return this; }, everyMinutes() { return this; }, create() {} }),
   },
   MailApp: { sendEmail: (m) => mails.push(m) },
+  PropertiesService: {
+    getScriptProperties: () => ({
+      getProperty: (k) => (k in propiedades ? propiedades[k] : null),
+      setProperty: (k, v) => { propiedades[k] = String(v); },
+      deleteProperty: (k) => { delete propiedades[k]; },
+    }),
+  },
+  Session: { getEffectiveUser: () => ({ getEmail: () => 'duenio@prueba' }) },
+  HtmlService: { createHtmlOutput: (h) => ({ html: h, setTitle() { return this; } }) },
   console,
 };
+// Sin código de administrador al arrancar, como en Google recién instalado.
+// Para arrancar con uno ya definido: node dev/servidor-prueba.js 8765 1234
+const propiedades = process.argv[3] ? { PIN_ADMIN: process.argv[3] } : {};
 vm.createContext(contexto);
-const codigo = fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8')
-  .replace("const PIN_ADMIN = 'CAMBIAR';", "const PIN_ADMIN = '1234';");   // código de prueba
-vm.runInContext(codigo + '\nthis.__api = { configurar, doPost, doGet, enviarAvisos };', contexto);
+const codigo = fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8');
+vm.runInContext(codigo + '\nthis.__api = { doPost, doGet, enviarAvisos };', contexto);
 const api = contexto.__api;
-api.configurar();
+api.doGet();   // primera apertura: prepara la planilla
 
 // ---------------------------------------------------------------- servidor
 const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
