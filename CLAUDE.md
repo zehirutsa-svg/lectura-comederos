@@ -20,7 +20,8 @@ al arrancar, se pueden agregar/quitar (modo administrador).
 docs/                 la app (GitHub Pages publica esta carpeta — por eso se llama docs)
   index.html, style.css, app.js
   config.js           SCRIPT_URL = URL del Apps Script (vacía = solo guarda en el teléfono)
-  sw.js               service worker (offline). Subir CACHE ('comederos-vN') en cada publicación
+  sw.js               service worker: red primero (3 s) y si no, copia guardada; el manifest nunca
+                      se cachea (si no, Chrome instala con el nombre viejo). Subir CACHE en cada publicación
   manifest.webmanifest, icons/   ícono = logo completo de ZEHIRUT (ver abajo)
 apps-script/          backend (Code.gs + appsscript.json), se sube con clasp (ver abajo)
 .clasp.json           scriptId del Apps Script y parentId del Google Sheet
