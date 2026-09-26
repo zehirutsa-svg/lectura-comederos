@@ -10,7 +10,7 @@
 // administrador (con código) puede tocar cualquier día. El script de Google
 // vuelve a chequear lo mismo, así que no depende solo de la app.
 
-const VERSION = '1.0.4';
+const VERSION = '1.0.5';
 const PCT = { 1: -7, 2: -5, 3: -3, 4: -2, 5: 0, 6: 2, 7: 3, 8: 5, 9: 7 };
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -561,14 +561,16 @@ async function agregarCorral() {
 }
 
 // ---------------------------------------------------------------- instalar
-// Chrome no siempre muestra solo el cartel de instalar: se guarda su evento y se
-// ofrece un botón propio. En iPhone no hay evento, se explica el paso a mano.
+// El botón aparece SIEMPRE que la app se abre en el navegador (no instalada), para
+// cualquier usuario. Si Chrome ya ofreció instalar, instala directo; si todavía no
+// (a veces tarda) o es iPhone, explica los pasos a mano.
 let eventoInstalar = null;
 const instalada = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const esIPhone = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const b_ = (t) => '<b style="font-size:inherit">' + t + '</b>';
 
 function renderInstalar() {
-  $('btn-instalar').classList.toggle('oculto', instalada() || !(eventoInstalar || esIPhone()));
+  $('btn-instalar').classList.toggle('oculto', instalada());
 }
 
 async function instalar() {
@@ -579,10 +581,19 @@ async function instalar() {
     renderInstalar();
     return;
   }
+  if (esIPhone()) {
+    cartel({
+      icono: '📲', titulo: 'Instalar en iPhone', no: '', si: 'Entendido',
+      html: 'Abrí esta página en ' + b_('Safari') + ', tocá el botón de compartir ' +
+        '(el cuadrado con la flecha) y elegí ' + b_('Agregar a inicio') + '.',
+    });
+    return;
+  }
   cartel({
-    icono: '📲', titulo: 'Instalar en iPhone', no: '', si: 'Entendido',
-    html: 'Abrí esta página en <b style="font-size:inherit">Safari</b>, tocá el botón de compartir ' +
-      '(el cuadrado con la flecha) y elegí <b style="font-size:inherit">Agregar a inicio</b>.',
+    icono: '📲', titulo: 'Instalar la app', no: '', si: 'Entendido',
+    html: 'Tocá los ' + b_('tres puntitos ⋮') + ' de arriba a la derecha de Chrome y elegí ' +
+      b_('Instalar aplicación') + ' (o ' + b_('Install and create shortcut') + ') → ' + b_('Instalar') + '.' +
+      '<br><br>Si aparece la opción de acceso directo, elegí ' + b_('Instalar') + ', no el acceso directo.',
   });
 }
 
