@@ -141,6 +141,25 @@ main { flex: 1; overflow-y: auto; }
 .tabla td.vacio { color: #aaa; }
 #btn-mas-dias { width: 100%; }
 
+.celda-corral { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Gráfico de un corral */
+.grafico-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.grafico-cabecera .subtitulo { margin: 0; flex: 1; }
+.grafico-cabecera .relleno { width: 48px; flex: none; }
+.rangos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 8px; }
+.rangos button {
+  min-height: 46px; border: 2px solid var(--negro); border-radius: 12px; background: #fff;
+  font-size: 17px; font-weight: 700;
+}
+.rangos button.activo { background: var(--negro); color: #fff; }
+.grafico-detalle { text-align: center; font-size: 21px; font-weight: 800; min-height: 32px; padding: 4px 0; }
+.grafico-svg svg { display: block; width: 100%; touch-action: pan-y; }
+.grafico-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.grafico-stats div { border: 2px solid var(--negro); border-radius: 12px; padding: 8px; text-align: center; }
+.grafico-stats span { display: block; font-size: 14px; color: var(--gris); font-weight: 600; }
+.grafico-stats b { font-size: 24px; }
+
 /* Menú */
 .logo-menu { display: block; width: 150px; margin: 6px auto 12px; }
 .tarjeta { border: 2px solid var(--negro); border-radius: 14px; padding: 12px; margin-bottom: 12px; }

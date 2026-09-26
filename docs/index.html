@@ -67,6 +67,23 @@
     <button id="btn-mas-dias" class="btn-secundario">Ver 14 días más</button>
   </section>
 
+  <!-- GRÁFICO DE UN CORRAL (se abre desde el Historial) -->
+  <section id="v-grafico" class="vista oculto">
+    <div class="grafico-cabecera">
+      <button id="grafico-volver" class="btn-nav chico" aria-label="Volver al historial">‹</button>
+      <h2 id="grafico-titulo" class="subtitulo"></h2>
+      <span class="relleno"></span>
+    </div>
+    <div id="grafico-rangos" class="rangos">
+      <button data-dias="14">14 días</button>
+      <button data-dias="30">30 días</button>
+      <button data-dias="60">60 días</button>
+    </div>
+    <div id="grafico-detalle" class="grafico-detalle"></div>
+    <div id="grafico-svg" class="grafico-svg"></div>
+    <div id="grafico-stats" class="grafico-stats"></div>
+  </section>
+
   <!-- MENU -->
   <section id="v-menu" class="vista oculto">
     <img src="icons/logo.png" alt="Estancias La Prudencia - La Paciencia" class="logo-menu">

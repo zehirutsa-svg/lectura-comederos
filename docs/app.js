@@ -10,7 +10,7 @@
 // administrador (con código) puede tocar cualquier día. El script de Google
 // vuelve a chequear lo mismo, así que no depende solo de la app.
 
-const VERSION = '1.0.5';
+const VERSION = '1.1.0';
 const PCT = { 1: -7, 2: -5, 3: -3, 4: -2, 5: 0, 6: 2, 7: 3, 8: 5, 9: 7 };
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -104,8 +104,9 @@ function irAFecha(fecha) {
 
 function irAVista(v) {
   estado.vista = v;
-  for (const id of ['cargar', 'resumen', 'historial', 'menu']) $('v-' + id).classList.toggle('oculto', id !== v);
-  document.querySelectorAll('.menu-inferior button').forEach((b) => b.classList.toggle('activo', b.dataset.vista === v));
+  for (const id of ['cargar', 'resumen', 'historial', 'grafico', 'menu']) $('v-' + id).classList.toggle('oculto', id !== v);
+  document.querySelectorAll('.menu-inferior button').forEach((b) => b.classList.toggle('activo', b.dataset.vista === (v === 'grafico' ? 'historial' : v)));
+  document.querySelector('.fecha-fila').classList.toggle('oculto', v !== 'cargar' && v !== 'resumen');
   document.querySelector('main').scrollTop = 0;
   render();
 }
@@ -224,6 +225,7 @@ function render() {
   if (estado.vista === 'cargar') renderCargar();
   else if (estado.vista === 'resumen') renderResumen();
   else if (estado.vista === 'historial') renderHistorial();
+  else if (estado.vista === 'grafico') renderGrafico();
   else if (estado.vista === 'menu') renderMenu();
 }
 
@@ -281,7 +283,7 @@ function renderHistorial() {
     return '<th data-fecha="' + d + '">' + DIAS_SEMANA[x.getDay()] + '<br>' + x.getDate() + ' ' + MESES[x.getMonth()] + '</th>';
   }).join('') + '</tr>';
   for (const c of corralesActivos()) {
-    html += '<tr><td>CORRAL ' + c.numero + '</td>' + dias.map((d) => {
+    html += '<tr><td class="celda-corral" data-corral="' + c.numero + '">CORRAL ' + c.numero + ' 📈</td>' + dias.map((d) => {
       const s = scoreDe(d, c.numero);
       return s != null ? '<td class="s' + s + '">' + fmtScore(s) + '</td>' : '<td class="vacio">—</td>';
     }).join('') + '</tr>';
@@ -290,9 +292,11 @@ function renderHistorial() {
   $('historial-tabla').querySelectorAll('th[data-fecha]').forEach((th) => {
     th.onclick = () => { irAFecha(th.dataset.fecha); irAVista('cargar'); };
   });
-  $('historial-nota').textContent = SCRIPT_URL
-    ? 'Tocá una fecha para verla. El historial completo está en el Google Sheet.'
-    : 'Datos guardados en este teléfono. Tocá una fecha para verla.';
+  $('historial-tabla').querySelectorAll('td[data-corral]').forEach((td) => {
+    td.onclick = () => abrirGrafico(Number(td.dataset.corral));
+  });
+  $('historial-nota').textContent = 'Tocá un corral para ver su gráfico, o una fecha para ir a ese día.' +
+    (SCRIPT_URL ? ' El historial completo está en el Google Sheet.' : '');
 }
 
 function renderMenu() {
@@ -337,6 +341,122 @@ function renderSync() {
   else { txt = '✓ Enviado'; cls = 'ok'; }
   el.textContent = txt;
   el.className = 'sync ' + cls;
+}
+
+// ---------------------------------------------------------------- gráfico de un corral
+// Línea del score día por día, dibujada a mano en SVG (sin bibliotecas, así anda
+// offline). Los puntos llevan el color de su botón; los días sin carga cortan la
+// línea en vez de unir puntos lejanos. Tocar o arrastrar sobre el gráfico muestra
+// el valor de ese día arriba.
+const COLOR_SCORE = { 1: '#F7C1C1', 2: '#F7C1C1', 3: '#FAC775', 4: '#FAC775', 5: '#E4E2DA', 6: '#C0DD97', 7: '#C0DD97', 8: '#9FE1CB', 9: '#9FE1CB' };
+const grafico = { corral: null, dias: 30, sel: null };
+
+function asegurarDias(n) {
+  if (n > diasHistorial) { diasHistorial = n; sincronizar(); }
+}
+
+function abrirGrafico(n) {
+  grafico.corral = n;
+  grafico.sel = null;
+  asegurarDias(grafico.dias);
+  irAVista('grafico');
+}
+
+function detalleGrafico(p) {
+  $('grafico-detalle').textContent = !p ? '' :
+    fechaConDia(p.d) + ' · ' + (p.s != null ? fmtScore(p.s) : 'sin cargar');
+}
+
+function renderGrafico() {
+  const n = grafico.corral;
+  if (n == null) return;
+  $('grafico-titulo').textContent = 'CORRAL ' + n;
+  document.querySelectorAll('#grafico-rangos button').forEach((b) =>
+    b.classList.toggle('activo', Number(b.dataset.dias) === grafico.dias));
+
+  const hoy = hoyISO();
+  const puntos = [];
+  for (let i = grafico.dias - 1; i >= 0; i--) {
+    const d = sumarDias(hoy, -i);
+    puntos.push({ d, i: puntos.length, s: scoreDe(d, n) });
+  }
+  const conDato = puntos.filter((p) => p.s != null);
+  if (grafico.sel == null || !puntos[grafico.sel]) grafico.sel = conDato.length ? conDato[conDato.length - 1].i : null;
+
+  const promedio = conDato.length ? conDato.reduce((a, p) => a + p.s, 0) / conDato.length : null;
+  $('grafico-stats').innerHTML =
+    '<div><span>Días cargados</span><b>' + conDato.length + ' de ' + puntos.length + '</b></div>' +
+    '<div><span>Score promedio</span><b>' + (promedio == null ? '—' : promedio.toFixed(1).replace('.', ',')) + '</b></div>';
+
+  const cont = $('grafico-svg');
+  if (!conDato.length) {
+    cont.innerHTML = '<p class="nota centro" style="padding:40px 0">Sin scores cargados en este período.</p>';
+    detalleGrafico(null);
+    return;
+  }
+
+  const W = Math.max(300, cont.clientWidth || 340);
+  const H = 320;
+  const m = { l: 76, r: 16, t: 14, b: 38 };
+  const paso = (W - m.l - m.r) / Math.max(1, puntos.length - 1);
+  const x = (i) => m.l + i * paso;
+  const y = (s) => m.t + (9 - s) * (H - m.t - m.b) / 8;
+  const radio = puntos.length <= 30 ? 7 : 5;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Score del corral ' + n + ' en los últimos ' + puntos.length + ' días">';
+
+  // Eje del score: 1 a 9, con el 5 (0%) marcado como referencia.
+  for (let v = 1; v <= 9; v++) {
+    const es5 = v === 5;
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (es5 ? '#111' : '#e2e2e2') +
+      '" stroke-width="' + (es5 ? 1.5 : 1) + '"' + (es5 ? ' stroke-dasharray="6 4"' : '') + '/>';
+    s += '<text x="' + (m.l - 8) + '" y="' + (y(v) + 5) + '" text-anchor="end" font-size="14" font-weight="' + (es5 ? 800 : 600) +
+      '" fill="#111">' + v + ' (' + pctTexto(v) + ')</text>';
+  }
+  // Fechas abajo: cada tantos días, contando desde hoy hacia atrás (hoy siempre rotulado).
+  const cada = puntos.length <= 14 ? 3 : puntos.length <= 30 ? 7 : 14;
+  for (let i = puntos.length - 1; i >= 0; i -= cada) {
+    const f = fechaDe(puntos[i].d);
+    const ancla = i === puntos.length - 1 ? 'end' : 'middle';
+    s += '<text x="' + x(i) + '" y="' + (H - 12) + '" text-anchor="' + ancla + '" font-size="13" fill="#333">' +
+      (i === puntos.length - 1 ? 'hoy' : f.getDate() + ' ' + MESES[f.getMonth()]) + '</text>';
+  }
+  // Cursor del día elegido (se mueve al tocar/arrastrar).
+  s += '<line id="g-cursor" y1="' + m.t + '" y2="' + (H - m.b) + '" stroke="#111" stroke-width="1" stroke-dasharray="3 3"/>';
+  // Línea: tramos entre días consecutivos con dato.
+  let d = '';
+  puntos.forEach((p, i) => {
+    if (p.s == null) return;
+    d += (i > 0 && puntos[i - 1].s != null ? 'L' : 'M') + x(i) + ' ' + y(p.s) + ' ';
+  });
+  s += '<path d="' + d + '" fill="none" stroke="#111" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+  s += '<circle id="g-anillo" r="' + (radio + 5) + '" fill="none" stroke="#111" stroke-width="2.5"/>';
+  conDato.forEach((p) => {
+    s += '<circle cx="' + x(p.i) + '" cy="' + y(p.s) + '" r="' + radio + '" fill="' + COLOR_SCORE[p.s] + '" stroke="#111" stroke-width="2"/>';
+  });
+  // Zona táctil de todo el gráfico, más grande que los puntos.
+  s += '<rect id="g-toque" x="' + (m.l - paso / 2) + '" y="0" width="' + (W - m.l - m.r + paso) + '" height="' + H + '" fill="transparent"/>';
+  s += '</svg>';
+  cont.innerHTML = s;
+
+  const svg = cont.querySelector('svg');
+  const marcar = (i) => {
+    grafico.sel = i;
+    const p = puntos[i];
+    const cursor = svg.querySelector('#g-cursor'), anillo = svg.querySelector('#g-anillo');
+    cursor.setAttribute('x1', x(i)); cursor.setAttribute('x2', x(i));
+    anillo.style.display = p.s != null ? '' : 'none';
+    if (p.s != null) { anillo.setAttribute('cx', x(i)); anillo.setAttribute('cy', y(p.s)); }
+    detalleGrafico(p);
+  };
+  const desdeToque = (ev) => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left) * W / r.width;
+    marcar(Math.min(puntos.length - 1, Math.max(0, Math.round((px - m.l) / paso))));
+  };
+  const toque = svg.querySelector('#g-toque');
+  toque.addEventListener('pointerdown', (ev) => { toque.setPointerCapture(ev.pointerId); desdeToque(ev); });
+  toque.addEventListener('pointermove', (ev) => { if (ev.buttons || ev.pointerType === 'touch') desdeToque(ev); });
+  marcar(grafico.sel);
 }
 
 // ---------------------------------------------------------------- WhatsApp
@@ -610,6 +730,11 @@ function conectarEventos() {
   $('fecha-txt').onclick = () => irAFecha(hoyISO());
   $('btn-borrar').onclick = borrarScore;
   $('btn-instalar').onclick = instalar;
+  $('grafico-volver').onclick = () => irAVista('historial');
+  document.querySelectorAll('#grafico-rangos button').forEach((b) => {
+    b.onclick = () => { grafico.dias = Number(b.dataset.dias); grafico.sel = null; asegurarDias(grafico.dias); render(); };
+  });
+  window.addEventListener('resize', () => { if (estado.vista === 'grafico') renderGrafico(); });
   $('btn-whatsapp').onclick = () => {
     window.open('https://wa.me/?text=' + encodeURIComponent(textoWhatsApp(estado.fecha)), '_blank');
   };

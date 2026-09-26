@@ -76,6 +76,11 @@ prepara sola (`asegurarConfigurado_`) la primera vez que se abre la URL o llega 
   (B) mail automático a zehirutsa@gmail.com (disparador cada 10 min; espera 5 min sin cambios
   para no mandar un mail a mitad de la carga). Los cambios del admin no generan mail.
 - **Nombre del operario**: se pide una vez por teléfono y queda en cada registro.
+- **Gráfico por corral** (v1.1.0): en Historial se toca el nombre del corral → línea del score
+  día por día (14/30/60 días), puntos con el color de su botón, línea de referencia en 5 (0%),
+  huecos en los días sin carga, tocar/arrastrar muestra el día, y abajo días cargados + promedio.
+  SVG a mano (sin bibliotecas) para que ande offline; si el período pide más días de los que hay
+  en el teléfono, se agranda `diasHistorial` y se sincroniza.
 - **Logo**: el logo completo de ZEHIRUT (círculo "Estancias La Prudencia – La Paciencia"). El
   dibujo del centro es la **marca a fuego** del ganado de ZEHIRUT S.A. (única en Paraguay), no una
   firma ni una marca comercial. Los íconos de `docs/icons/` salen del PNG original con el fondo
